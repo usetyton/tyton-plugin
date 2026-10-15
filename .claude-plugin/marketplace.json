@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "usetyton",
+  "description": "Tyton's plugin for auditing and setting up Meta Pixel and the Conversions API.",
+  "owner": {
+    "name": "Tyton",
+    "email": "hello@usetyton.com",
+    "url": "https://usetyton.com"
+  },
+  "plugins": [
+    {
+      "name": "tyton",
+      "source": "./",
+      "description": "Free Meta tracking audits and paid Meta Pixel and Conversions API setup with Tyton.",
+      "category": "marketing"
+    }
+  ]
+}

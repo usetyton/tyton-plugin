@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "tyton",
+  "displayName": "Tyton",
+  "version": "1.0.0",
+  "description": "Audit a website's Meta Pixel and Conversions API setup for free, then set up tracking with Tyton: sign in, connect one website, save your Conversions API token safely and approve the conversions you want to track.",
+  "author": {
+    "name": "Tyton",
+    "email": "hello@usetyton.com",
+    "url": "https://usetyton.com"
+  },
+  "homepage": "https://usetyton.com",
+  "repository": "https://github.com/usetyton/tyton-plugin",
+  "license": "MIT",
+  "keywords": [
+    "meta-pixel",
+    "conversions-api",
+    "capi",
+    "facebook-pixel",
+    "meta-ads",
+    "tracking",
+    "analytics",
+    "audit",
+    "mcp"
+  ],
+  "icon": "./assets/icon.png",
+  "documentationUrl": "https://usetyton.com/docs",
+  "supportUrl": "https://usetyton.com/contact",
+  "privacyPolicyUrl": "https://usetyton.com/privacy",
+  "termsOfServiceUrl": "https://usetyton.com/terms"
+}

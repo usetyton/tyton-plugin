@@ -1,0 +1,1 @@
+{"kind":"audit","reportSaved":true,"reportUrl":"https://usetyton.com/audit/r/mock-report-7Qk2","revision":2,"decision":{"status":"ready","score":{"points":20,"max":100,"label":"20/100"},"questions":[]}}

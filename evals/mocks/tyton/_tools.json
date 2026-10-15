@@ -1,0 +1,978 @@
+{
+ "tools": [
+  {
+   "name": "start_signup",
+   "title": "Create signup link",
+   "description": "When the human wants Tyton set up, ask: Want me to help you set this up with Tyton? Only after the human says yes, create their signup/payment/Connect link. A free audit is optional: pass a saved audit's audit_id and audit_key to bring it along, or otherwise site_url (the customer's live https website, confirmed with them). Existing paid accounts skip payment. Keep poll_token private; only share authorization_url. This grants no access or tracking activation by itself.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "site_url": {
+      "description": "The customer's website (https) when there is no saved audit. The customer sees and approves it before connecting.",
+      "type": "string",
+      "maxLength": 2048
+     },
+     "customer_approved": {
+      "type": "boolean",
+      "enum": [
+       true
+      ]
+     },
+     "client": {
+      "enum": [
+       "codex",
+       "cursor",
+       "claude_code",
+       "other"
+      ],
+      "type": "string"
+     }
+    },
+    "required": [
+     "customer_approved"
+    ]
+   },
+   "annotations": {
+    "title": "Create signup link",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": false,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "get_signup_status",
+   "title": "Check signup status",
+   "description": "Privately check the customer's signup/Connect request. Use request_id and poll_token from start_signup, never put the token in a URL or customer message. After explicit owner approval, returns this connection's server key for secure host configuration. Poll no faster than every 5 seconds; stop on expiry/unavailable. Connection is not tracking activation.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "request_id": {
+      "type": "string",
+      "format": "uuid"
+     },
+     "poll_token": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     }
+    },
+    "required": [
+     "request_id",
+     "poll_token"
+    ]
+   },
+   "annotations": {
+    "title": "Check signup status",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "begin_audit",
+   "title": "Begin free audit",
+   "description": "Start here for a NEW audit. Generates a private capability and initial requestId before any database write, so a lost save response can be retried safely. Nothing is saved yet. Retain these privately; pass audit_id, audit_key, revision 0 and request_id from this result to the first evidence tool. Existing audits use read_audit instead.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string",
+      "format": "uri"
+     }
+    },
+    "required": [
+     "url"
+    ]
+   },
+   "annotations": {
+    "title": "Begin free audit",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "read_audit",
+   "title": "Read audit",
+   "description": "Resume this audit with its private capability. Returns recorded context, scoped observations, provenance and component coverage; use existing answers and findings rather than asking the human again. This does not verify the site's backend or grant access to it.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "revision": {
+      "description": "latest run revision; 0 only for first write after begin_audit; read_audit recovers the current revision",
+      "type": "integer",
+      "minimum": 0
+     },
+     "request_id": {
+      "description": "fresh UUID per mutation; reuse exactly for an identical retry after a lost response",
+      "type": "string",
+      "format": "uuid"
+     }
+    },
+    "required": [
+     "audit_id",
+     "audit_key"
+    ]
+   },
+   "annotations": {
+    "title": "Read audit",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "record_audit_context",
+   "title": "Record audit answers",
+   "description": "Record answers for this component. Inspect first, then ask decision.questions before closing. Do not infer human answers. audit_scope records the human's continue_investigation/public_only choice; availability_expectation records whether unavailable controls are expected. Use the question's URL. These choices must be human_reported. A public-only choice allows a partial handoff without repeated access requests. Prior topics are retained; a new answer replaces that topic. No secrets or raw source.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "description": "audit run ID returned by Tyton; unrelated runs must not share it",
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "description": "private audit write capability returned by Tyton; never put in a public report, URL or user-facing summary",
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "revision": {
+      "description": "latest run revision; 0 only for first write after begin_audit; read_audit recovers the current revision",
+      "type": "integer",
+      "minimum": 0
+     },
+     "request_id": {
+      "description": "fresh UUID per mutation; reuse exactly for an identical retry after a lost response",
+      "type": "string",
+      "format": "uuid"
+     },
+     "url": {
+      "type": "string",
+      "format": "uri"
+     },
+     "answers": {
+      "type": "object",
+      "properties": {
+       "conversion_goal": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "marketing_site": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "app_backend": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "repository_scope": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "consent_expectation": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "access_limitations": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source"
+        ]
+       },
+       "audit_scope": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         },
+         "scope_choice": {
+          "enum": [
+           "continue_investigation",
+           "public_only"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source",
+         "scope_choice"
+        ]
+       },
+       "availability_expectation": {
+        "description": "A concise non-sensitive answer and its actual source; inference is not confirmation",
+        "type": "object",
+        "properties": {
+         "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+         },
+         "source": {
+          "enum": [
+           "human_reported",
+           "agent_observed",
+           "inferred"
+          ],
+          "type": "string"
+         },
+         "availability_choice": {
+          "enum": [
+           "expected",
+           "unexpected"
+          ],
+          "type": "string"
+         }
+        },
+        "required": [
+         "value",
+         "source",
+         "availability_choice"
+        ]
+       }
+      }
+     }
+    },
+    "required": [
+     "url",
+     "answers"
+    ]
+   },
+   "annotations": {
+    "title": "Record audit answers",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "record_audit_runtime",
+   "title": "Record runtime evidence",
+   "description": "Record bounded evidence from the agent's real browser, authorized backend inspection or destination UI in the SAME audit run. This tool does not run a browser or send events. Do not invent observations; report unknown when a capability/access is missing. Never upload network payloads, cookies, tokens, source, personal data or event IDs. Consent changes, form submissions, bookings and test events require separate authorization.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "description": "audit run ID returned by Tyton; unrelated runs must not share it",
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "description": "private audit write capability returned by Tyton; never put in a public report, URL or user-facing summary",
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "revision": {
+      "description": "latest run revision; 0 only for first write after begin_audit; read_audit recovers the current revision",
+      "type": "integer",
+      "minimum": 0
+     },
+     "request_id": {
+      "description": "fresh UUID per mutation; reuse exactly for an identical retry after a lost response",
+      "type": "string",
+      "format": "uuid"
+     },
+     "url": {
+      "type": "string",
+      "format": "uri"
+     },
+     "observed_at": {
+      "type": "string",
+      "format": "date-time"
+     },
+     "consent_state": {
+      "enum": [
+       "unknown",
+       "not_interacted",
+       "accepted",
+       "declined",
+       "no_banner_observed"
+      ],
+      "type": "string"
+     },
+     "checks": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "check": {
+         "enum": [
+          "rendered_controls",
+          "pixel_request",
+          "server_delivery",
+          "destination_receipt",
+          "cross_source_dedup",
+          "consent_behavior"
+         ],
+         "type": "string"
+        },
+        "state": {
+         "enum": [
+          "present",
+          "absent",
+          "unknown",
+          "not_applicable"
+         ],
+         "type": "string"
+        },
+        "evidence_type": {
+         "enum": [
+          "browser_dom",
+          "browser_network",
+          "backend_log",
+          "destination_ui",
+          "human_report"
+         ],
+         "type": "string"
+        },
+        "evidence": {
+         "description": "sanitized summary of the inspected observation; no payloads/identifiers/credentials",
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 300
+        }
+       },
+       "required": [
+        "check",
+        "state",
+        "evidence_type",
+        "evidence"
+       ]
+      },
+      "minItems": 1,
+      "maxItems": 20
+     }
+    },
+    "required": [
+     "url",
+     "observed_at",
+     "consent_state",
+     "checks"
+    ]
+   },
+   "annotations": {
+    "title": "Record runtime evidence",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "audit_site",
+   "title": "Audit a public page",
+   "description": "Inspect one public page's HTML and save a partial audit report without signup. Call begin_audit first and pass its session fields for the first save; reuse the session for related components. Returns evidence, limitations and discovery actions, not a full tracking-health verdict. Discover the actual conversion journey and related app/backend; inspect available evidence before asking the human material unanswered questions. Optional sanitized HTML is agent-supplied, unverified evidence; never upload private source, personal data or credentials.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "description": "audit run ID returned by Tyton; unrelated runs must not share it",
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "description": "private audit write capability returned by Tyton; never put in a public report, URL or user-facing summary",
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "revision": {
+      "description": "latest run revision; 0 only for first write after begin_audit; read_audit recovers the current revision",
+      "type": "integer",
+      "minimum": 0
+     },
+     "request_id": {
+      "description": "fresh UUID per mutation; reuse exactly for an identical retry after a lost response",
+      "type": "string",
+      "format": "uuid"
+     },
+     "url": {
+      "description": "the site to audit",
+      "type": "string",
+      "format": "uri"
+     },
+     "html": {
+      "description": "Authorized sanitized page HTML, including local previews. Entire JSON-RPC request must fit 256 KiB after JSON escaping. Larger pages need a focused capture; never upload private source or personal data.",
+      "type": "string",
+      "maxLength": 2000000
+     },
+     "fresh": {
+      "description": "bypass the short public-page cache when verifying a change",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "url"
+    ]
+   },
+   "annotations": {
+    "title": "Audit a public page",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": true
+   }
+  },
+  {
+   "name": "setup_tracking",
+   "title": "Discover or configure site",
+   "description": "Discover and plan reviewed v2 setup. URL-only is read-only and needs no Pixel; with a real Pixel ID this configures the connected project, not its approval or activation. Preserve existing installations; use verification mode before authorized live sends.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "description": "the site being tracked \u2014 domain or full URL",
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 2000
+     },
+     "pixel_id": {
+      "description": "Meta Pixel ID, numeric \u2014 omit if you don't have it yet",
+      "type": "string",
+      "pattern": "^\\d{5,25}$"
+     },
+     "name": {
+      "description": "project name; defaults to the site name",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+     },
+     "checkout_domains": {
+      "description": "hostnames where checkout happens, if already known",
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "confirm_change": {
+      "description": "true = yes, switch this project to a different Pixel ID or site URL on purpose",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "url"
+    ]
+   },
+   "annotations": {
+    "title": "Discover or configure site",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "setup_status",
+   "title": "Read site configuration",
+   "description": "Read connected-project configuration and resume the reviewed v2 workflow. Configuration/token status is not plan approval, callback verification, activation or Meta receipt.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   },
+   "annotations": {
+    "title": "Read site configuration",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "submit_findings",
+   "title": "Submit code findings",
+   "description": "Submit scoped findings from a repository confirmed to belong to the customer. Include reviewed_files (relative paths only, no source). Unknown is not failed and does not mean code reviewed. Do not call just to fill unknown fields; investigate first, ask material unanswered questions, or share a clearly partial report. Group labels alone do not combine multiple properties. Findings are agent-reported, not verified deployed behavior.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "audit_id": {
+      "description": "audit run ID returned by Tyton; unrelated runs must not share it",
+      "type": "string",
+      "pattern": "^audit-[a-f0-9]{32}$"
+     },
+     "audit_key": {
+      "description": "private audit write capability returned by Tyton; never put in a public report, URL or user-facing summary",
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+     },
+     "revision": {
+      "description": "latest run revision; 0 only for first write after begin_audit; read_audit recovers the current revision",
+      "type": "integer",
+      "minimum": 0
+     },
+     "request_id": {
+      "description": "fresh UUID per mutation; reuse exactly for an identical retry after a lost response",
+      "type": "string",
+      "format": "uuid"
+     },
+     "url": {
+      "description": "the site these findings belong to",
+      "type": "string",
+      "format": "uri"
+     },
+     "reviewed_files": {
+      "description": "relative paths actually inspected in the relevant customer repository; no source code, absolute paths or secret files",
+      "type": "array",
+      "items": {
+       "type": "string",
+       "minLength": 1,
+       "maxLength": 160
+      },
+      "maxItems": 30
+     },
+     "not_applicable": {
+      "description": "Only after reviewing relevant files and confirming scope: checks that do not apply, with the actual reason. Missing access is unknown, never N/A.",
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "check": {
+         "enum": [
+          "C1",
+          "C2",
+          "C4",
+          "C5",
+          "C4a",
+          "C4b",
+          "C4d",
+          "C4e"
+         ],
+         "type": "string"
+        },
+        "reason": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 160
+        }
+       },
+       "required": [
+        "check",
+        "reason"
+       ]
+      },
+      "maxItems": 8
+     },
+     "server_side_events": {
+      "enum": [
+       "yes",
+       "no",
+       "unknown"
+      ],
+      "description": "code sends server-side events (CAPI/SDK/webhook)? unknown if you could not check",
+      "type": "string"
+     },
+     "server_evidence": {
+      "description": "one line: file/function where you found it",
+      "type": "string",
+      "maxLength": 300
+     },
+     "dedup_ids": {
+      "enum": [
+       "yes",
+       "no",
+       "unknown"
+      ],
+      "description": "orderId/event_id on both browser and server events?",
+      "type": "string"
+     },
+     "pixel_in_code": {
+      "enum": [
+       "yes",
+       "no",
+       "unknown"
+      ],
+      "description": "Meta Pixel initialized anywhere in the code?",
+      "type": "string"
+     },
+     "container_in_code": {
+      "enum": [
+       "yes",
+       "no",
+       "unknown"
+      ],
+      "description": "Tyton container script embedded?",
+      "type": "string"
+     },
+     "payment_provider": {
+      "enum": [
+       "stripe",
+       "lemonsqueezy",
+       "paddle",
+       "gumroad",
+       "shopify",
+       "polar",
+       "other",
+       "none",
+       "unknown"
+      ],
+      "description": "payment processor used (check package.json, env vars, webhook routes)",
+      "type": "string"
+     },
+     "framework": {
+      "enum": [
+       "nextjs",
+       "nuxt",
+       "astro",
+       "remix",
+       "sveltekit",
+       "vite",
+       "cra",
+       "plain_html",
+       "other"
+      ],
+      "description": "frontend framework (check package.json deps)",
+      "type": "string"
+     },
+     "backend": {
+      "enum": [
+       "in_repo",
+       "separate_repo",
+       "unknown"
+      ],
+      "description": "where is the backend code? in this repo, a separate repo you can't see, or unknown",
+      "type": "string"
+     },
+     "existing_capi": {
+      "description": "if you found existing CAPI code, grade it: hashes_pii (does it hash emails/phones before sending?), sends_event_id (does each server event include an event_id?), graph_version (which Graph API version, e.g. v19.0), test_event_code_in_prod (is a test code left in production?), sends_fbp_fbc (are browser cookie values forwarded?)",
+      "type": "object",
+      "properties": {
+       "hashes_pii": {
+        "enum": [
+         "yes",
+         "no",
+         "unknown"
+        ],
+        "description": "emails/phones hashed before sending?",
+        "type": "string"
+       },
+       "sends_event_id": {
+        "enum": [
+         "yes",
+         "no",
+         "unknown"
+        ],
+        "description": "event_id sent with server events?",
+        "type": "string"
+       },
+       "graph_version": {
+        "description": "Graph API version used, e.g. v19.0",
+        "type": "string",
+        "maxLength": 10
+       },
+       "test_event_code_in_prod": {
+        "enum": [
+         "yes",
+         "no",
+         "unknown"
+        ],
+        "description": "test_event_code left in production code?",
+        "type": "string"
+       },
+       "sends_fbp_fbc": {
+        "enum": [
+         "yes",
+         "no",
+         "unknown"
+        ],
+        "description": "fbp/fbc cookie values forwarded in server events?",
+        "type": "string"
+       }
+      }
+     },
+     "checkout_domains": {
+      "description": "domains the checkout lives on, if separate; no customer paths or query strings",
+      "type": "array",
+      "items": {
+       "type": "string",
+       "maxLength": 253
+      },
+      "maxItems": 20
+     },
+     "group": {
+      "description": "legacy grouping label only; does not combine reports or verify domain ownership",
+      "type": "string",
+      "maxLength": 80
+     },
+     "notes": {
+      "description": "anything else you found. String or array of strings \u2014 whatever is natural",
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000
+       },
+       {
+        "type": "array",
+        "items": {
+         "type": "string",
+         "maxLength": 160
+        },
+        "maxItems": 10
+       }
+      ]
+     }
+    },
+    "required": [
+     "url"
+    ]
+   },
+   "annotations": {
+    "title": "Submit code findings",
+    "readOnlyHint": false,
+    "destructiveHint": true,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "read_docs",
+   "title": "Read Tyton guidance",
+   "description": "Read Tyton guidance before coaching a customer. meta_setup shares the dashboard's nine-step Meta business/dataset/website/CAPI/test checklist; optionally request one step. website_management explains the persistent selector, per-project agent connection and confirmed deletion. Also install, events, dedup, crawler_protection, create_pixel, create_business, consent, pricing, privacy, performance, gtm, platforms, faq. Give the current next actions with exact labels and links, not the whole guide at once. Read-only instructions, not saved checklist state or proof of delivery.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "topic": {
+      "enum": [
+       "meta_setup",
+       "website_management",
+       "install",
+       "events",
+       "dedup",
+       "crawler_protection",
+       "create_pixel",
+       "create_business",
+       "consent",
+       "pricing",
+       "privacy",
+       "performance",
+       "gtm",
+       "platforms",
+       "faq"
+      ],
+      "type": "string"
+     },
+     "step": {
+      "enum": [
+       "business",
+       "pixel",
+       "domain",
+       "token",
+       "installed",
+       "browser_seen",
+       "server_seen",
+       "dedup",
+       "finished"
+      ],
+      "description": "Optional Meta setup step; only used with topic meta_setup.",
+      "type": "string"
+     }
+    },
+    "required": [
+     "topic"
+    ]
+   },
+   "annotations": {
+    "title": "Read Tyton guidance",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "get_setup_progress",
+   "title": "Read setup progress",
+   "description": "Resume this connected site's setup. Read saved plan approval, installation generation, missing callback sources and intentional pause in one compact response. Follow its one next step; do not repeat completed discovery, pairing or staging. Read-only: no approval, activation or test events. Callback evidence is not business success or Meta receipt. Missing Meta credentials do not block verification-only setup.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+   },
+   "annotations": {
+    "title": "Read setup progress",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": false
+   }
+  },
+  {
+   "name": "save_capi_token",
+   "title": "Save Conversions API token",
+   "description": "Save the customer's supplied Events Manager Conversions API token for this connected site's current Pixel. Pass exactly one of capi_token or sealed_capi_token, with the Pixel ID. Ask for missing credentials; never invent or auto-fill demo values. Prefer secure input. If the customer has already supplied a token and asks you to configure it, use it here without echoing it. The token is encrypted, never returned. Pixel ID must match setup_tracking/current configuration. Rejects explicit invalid/expired-token responses; otherwise saves with delivery unchecked. Continue setup after saving. Does not send a test conversion, approve, activate or prove delivery. The Tyton browser extension may give the customer a sealed token (it starts with `tyton_sealed_v1.`). Pass it exactly as given in `sealed_capi_token` with the Pixel ID. Never decode, shorten, retype or echo it, and never ask for the raw token when a sealed one was given.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "pixel_id": {
+      "type": "string",
+      "pattern": "^\\d{5,25}$"
+     },
+     "capi_token": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 4096,
+      "pattern": "^[A-Za-z0-9_.-]+$"
+     },
+     "sealed_capi_token": {
+      "type": "string",
+      "maxLength": 5000,
+      "description": "A sealed token from the Tyton browser extension, exactly as given (starts with tyton_sealed_v1.)."
+     }
+    },
+    "required": [
+     "pixel_id"
+    ],
+    "additionalProperties": false
+   },
+   "annotations": {
+    "title": "Save Conversions API token",
+    "readOnlyHint": false,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+   }
+  }
+ ]
+}

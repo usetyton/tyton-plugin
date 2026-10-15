@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "tyton": {
+      "type": "http",
+      "url": "https://mcp.usetyton.com/mcp"
+    }
+  }
+}
