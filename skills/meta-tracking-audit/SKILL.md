@@ -46,4 +46,4 @@ Keep these rules when you explain:
 
 ## Offer setup once
 
-After the summary, ask once: "Want me to help you set this up with Tyton?" If they say yes, switch to the `meta-tracking-setup` skill and bring the saved audit along. If they say no or don't answer, leave it there. Paid setup is a separate step the customer chooses, and the audit never requires it.
+After the summary, ask once: "Want me to help you set this up with Tyton?" If they say yes, switch to the `meta-tracking-setup` skill and bring the saved audit along. If they say no or don't answer, leave it there. Setup is a separate step the customer chooses, and the audit never requires it.

@@ -1,11 +1,11 @@
 ---
 name: meta-tracking-setup
-description: Set up Meta Pixel and Conversions API tracking for a website with Tyton (paid). Use when someone wants to set up, fix, install or finish Meta or Facebook Pixel, CAPI or conversion tracking with Tyton, or to resume a Tyton setup. Covers signing in with Tyton, reading setup progress, guiding the customer through Meta one step at a time, and conversion plan approvals.
+description: Set up Meta Pixel and Conversions API tracking for a website with Tyton. Use when someone wants to set up, fix, install or finish Meta or Facebook Pixel, CAPI or conversion tracking with Tyton, or to resume a Tyton setup. Covers signing in with Tyton, reading setup progress, guiding the customer through Meta one step at a time, and conversion plan approvals.
 ---
 
 # Meta tracking setup with Tyton
 
-Paid setup works on one website the customer has connected to Tyton. Your job is to read where setup stands, do the next step, and guide the customer through the parts only they can do.
+Setup works on one website the customer has connected to Tyton. Your job is to read where setup stands, do the next step, and guide the customer through the parts only they can do.
 
 Talk to the customer in easy English, with at most three short numbered steps at a time. Explain Tyton once, then give the result and one next action. Don't repeat safety notes, hashes or tool names in every message.
 
@@ -15,7 +15,7 @@ Talk to the customer in easy English, with at most three short numbered steps at
 2. Call `get_setup_progress`. If the app isn't connected to Tyton yet, the app shows a Connect or sign-in prompt for Tyton.
    - In Claude Code, if no browser window opens, the customer can run `/mcp`, choose Tyton and sign in.
    - On claude.ai and in Cowork, the customer connects Tyton from the plugin's Connectors tab.
-3. Tell the customer what happens at usetyton.com: they sign in or create an account, pay only if their plan needs it, choose or add the one website, and approve the connection.
+3. Tell the customer what happens at usetyton.com: they sign in or create an account (the Free plan needs no card), choose or add the one website, and approve the connection.
 4. When they say they're done, call `get_setup_progress` again and check that the site it names is the site they meant.
 
 Connecting gives you access to that one website. It does not approve any conversion plan or start tracking.

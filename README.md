@@ -5,7 +5,7 @@
 Tyton helps you get Meta Pixel and the Meta Conversions API (CAPI) working on your website, with Claude doing the setup alongside you.
 
 - **Free audit**: Claude checks a public website's Meta tracking and tells you, in plain words, what works, what's missing and what it couldn't confirm. No account needed.
-- **Paid setup**: Claude connects to one website in your Tyton account, guides you through Meta one step at a time, saves your Conversions API token safely, and installs only the conversions you approve. Tyton hosts the server that sends your events to Meta.
+- **Setup**: Claude connects to one website in your Tyton account, guides you through Meta one step at a time, saves your Conversions API token safely, and installs only the conversions you approve. Tyton hosts the server that sends your events to Meta. The Free plan covers 1 site and 10,000 events a month (browser and server copies each count), with no card needed.
 
 Learn more at [usetyton.com](https://usetyton.com) and in the [docs](https://usetyton.com/docs).
 
@@ -34,10 +34,10 @@ Then ask Claude something like "Audit the Meta tracking on my website" or "Set u
 
 ## How sign-in works
 
-The free audit needs no sign-in. For paid setup, Claude uses Sign in with Tyton:
+The free audit needs no sign-in. For setup, Claude uses Sign in with Tyton:
 
 1. When Claude first needs your site, your app shows a Connect or sign-in prompt for Tyton. In Claude Code you can also run `/mcp` and choose Tyton.
-2. At usetyton.com you sign in or create an account, pay if your plan needs it, and choose the one website Claude may work on.
+2. At usetyton.com you sign in or create an account, pick the Free plan or a paid one, and choose the one website Claude may work on.
 3. You approve the connection. Claude can then read and change setup for that website only.
 
 Connecting doesn't approve any tracking. Claude shows you the conversions it plans to track and waits for your clear yes before approving them. You can review or remove access any time on the **Integrations** page in Tyton.
