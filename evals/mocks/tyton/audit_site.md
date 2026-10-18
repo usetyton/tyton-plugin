@@ -1,6 +1,0 @@
----
-expect:
-  url: string
----
-
-{"schemaVersion":"1","kind":"audit","status":"partial","url":"{{input.url}}","source":"server_observed","reportSaved":true,"reportUrl":"https://usetyton.com/audit/r/mock-report-7Qk2","revision":1,"findings":[{"label":"meta_pixel","state":"present","evidence":"fbq('init', ...) found in page HTML with one Pixel ID."},{"label":"server_events","state":"unknown","evidence":"No server-side Conversions API evidence is visible from public HTML."},{"label":"deduplication","state":"unknown","evidence":"No event IDs visible in page code."},{"label":"consent","state":"unknown","evidence":"No consent banner or consent mode call found in the HTML."},{"label":"delivery","state":"unchecked","evidence":"Delivery to Meta needs an observed event in Meta."}],"limitations":["Public HTML only. It cannot show whether the Pixel fired after consent, whether forms succeed, or whether Meta received events."],"decision":{"status":"needs_input","score":{"points":20,"max":100,"label":"20/100"},"questions":[{"id":"conversion_goal","url":"{{input.url}}","question":"What should count as a conversion for you: a completed signup, a booking, a purchase, or something else?"}],"issues":[]},"nextActions":["Ask the human the decision questions, then record answers with record_audit_context."]}

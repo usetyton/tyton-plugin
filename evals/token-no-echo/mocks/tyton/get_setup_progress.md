@@ -1,1 +1,0 @@
-{"kind":"setup_progress","site":"https://shop.example.com","connected":true,"pixel_id":"123456789012345","capi_token_saved":false,"plan":{"status":"none"},"installation":null,"next":{"actor":"customer","step":"token","action":"Save the customer's Conversions API token with save_capi_token for Pixel 123456789012345.","url":"https://usetyton.com/dashboard/meta-setup"}}
